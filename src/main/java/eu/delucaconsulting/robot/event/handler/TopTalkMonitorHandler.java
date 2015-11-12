@@ -13,6 +13,8 @@ import com.aldebaran.qi.helper.proxies.ALTextToSpeech;
 import eu.delucaconsulting.robot.rest.client.ConferenceVotingRestClient;
 
 /**
+ * 
+ * WatchDog on changed TOP sessions. Information provided by the Voting Conference API server
  * @author danieldeluca
  *
  */
@@ -20,6 +22,7 @@ public class TopTalkMonitorHandler {
 	private static final Logger logger = LogManager.getLogger(TopTalkMonitorHandler.class.getName());
 	ALMemory memory = null;
 	ALTextToSpeech tts = null;
+	private static final int SLEEPING_PERIOD = 300000; // in msec : 5 min
 
 	public void run(Session session) throws Exception {
 
@@ -30,16 +33,18 @@ public class TopTalkMonitorHandler {
 		String result = null;
 
 		while (true) {
-			logger.info("checking TOP talk change");
+			logger.info("checking TOP talk change (today)");
 			result = conferenceClient.hasTopTalkChanged(true);
 			if (result != null) {
 				tts.say(result);
 			}
+			logger.info("checking TOP talk change (entire conference)");
 			result = conferenceClient.hasTopTalkChanged(false);
 			if (result != null) {
 				tts.say(result);
 			}
-			Thread.sleep(300000); // 5 min
+			
+			Thread.sleep(SLEEPING_PERIOD);
 		}
 	}
 

@@ -25,6 +25,7 @@ import eu.delucaconsulting.robot.rest.domain.voting.Talk;
 import eu.delucaconsulting.robot.rest.domain.voting.Votes;
 
 /**
+ * Voting Server REST client
  * @author danieldeluca
  *
  */
@@ -34,6 +35,7 @@ public class ConferenceVotingRestClient {
 
 	// Voting API Documentation : https://bitbucket.org/jonmort/devoxx-vote-api
 	private static final String CONFERENCE_VOTING_HOST = "https://api-voting.devoxx.com";
+	// DV15 indicates: Devoxx Belgium 2015
 	private static final String CONFERENCE_PATH_VOTING = "/DV15/top/talks";
 
 	private Client restClient = null;
@@ -42,10 +44,11 @@ public class ConferenceVotingRestClient {
 	private String topConfTalkName = null;
 	private String topDayTalkName = null;
 
+	// Run it without the need of a robot
 	public static void main(String[] args) throws Exception {
 		ConferenceVotingRestClient client = new ConferenceVotingRestClient();
 		client.getTopTalks(5, false);
-		client.getTopTalks(5, false);
+		client.getTopTalks(5, true);
 		client.hasTopTalkChanged(true);
 		client.hasTopTalkChanged(false);
 		client.hasTopTalkChanged(true);
@@ -56,6 +59,11 @@ public class ConferenceVotingRestClient {
 		restClient = ClientBuilder.newClient();
 	}
 	
+	/**
+	 * Check if the TOP Talk has changed
+	 * @param today : indicates if we are dealing with today's top talk or entire conference top talks
+	 * @return Text (english) to be said by the robot if top talk changed
+	 */
 	public String hasTopTalkChanged(boolean today){
 		logger.info("Getting getTopTalk");
 		String todayWord = "";
@@ -68,7 +76,10 @@ public class ConferenceVotingRestClient {
 			topTalk = topConfTalkName;
 		}
 		StringBuffer result = new StringBuffer(todayWord + " The top conference talk ");
+		
+		// Getting the TOP talk (1)
 		Votes votes = getRawVotes(1, today);
+		// If we do have votes
 		if (votes != null){
 			Talk currentTopTalk = votes.getTalks()[0];
 			String currentTopTalkName = currentTopTalk.getName();
@@ -82,6 +93,8 @@ public class ConferenceVotingRestClient {
 				result.append(currentTopTalk.getTitle() + ", by ");
 				int index = 0;
 				int nbrSpeakers = currentTopTalk.getSpeakers().length;
+				
+				// Talk's speakers details
 				for (String speaker : currentTopTalk.getSpeakers()) {
 					index++;
 					result.append(StringUtils.trim(speaker));
@@ -90,6 +103,7 @@ public class ConferenceVotingRestClient {
 					}
 					logger.info("Speaker:" + speaker + ":");
 				}
+				// Reformating the average format (only 2 decimals)
 				DecimalFormat decimalFormat =  new DecimalFormat("#,##0.##");
 				result.append(",  with an average of " + decimalFormat.format(Double.valueOf(currentTopTalk.getAvg()).doubleValue())+ ".");
 				if (today){
@@ -108,16 +122,24 @@ public class ConferenceVotingRestClient {
 		
 	}
 	
+	/**
+	 * Get the raw set of votes
+	 * @param limit : limit the results to the top limit
+	 * @param today : top talk of today or the entire conference
+	 * @return the list of votes
+	 */
 	private Votes getRawVotes(int limit, boolean today){
 		Votes votes = null;
 		String restPath = CONFERENCE_PATH_VOTING;
 		if (today){
+			// Just query the VOTING REST api for today top talks
 			Date date = new Date();
 			SimpleDateFormat dateFormat = new SimpleDateFormat("EEEEE");
 			String dayOfWeek = dateFormat.format(date);
 			webTarget = restClient.target(CONFERENCE_VOTING_HOST).path(restPath).queryParam("limit", limit).queryParam("day", dayOfWeek.toLowerCase());
 		}
 		else {
+			// Query the VOTING REST api for the entire conference TOP talks			
 			webTarget = restClient.target(CONFERENCE_VOTING_HOST).path(restPath).queryParam("limit", limit);
 		}
 		logger.info(webTarget.getUri().toString());
@@ -138,6 +160,12 @@ public class ConferenceVotingRestClient {
 		return votes;
 	}
 
+	/**
+	 * Get the TOP talks
+	 * @param limit: limit to the top limit
+	 * @param today: top talks of today or top talks of the entire conference
+	 * @return the text to be said (in English) by the robot
+	 */
 	public String getTopTalks(int limit, boolean today) {
 		String todayWord = "";
 		if (today){

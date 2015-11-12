@@ -13,6 +13,10 @@ import eu.delucaconsulting.robot.rest.client.ConferenceScheduleRestClient;
 import eu.delucaconsulting.robot.rest.client.ConferenceVotingRestClient;
 
 /**
+ * Robot Head Sensors event subscription
+ * When Front Sensor touched, the robot queries the CFP API to get the current conference sessions and say the details
+ * When Middle Sensor touched, the robot queries the Voting Services in order to get the TOP_X_SESSION Sessions
+ * When Rear Sensor touched, we unsubscribe to both previous events.
  * @author danieldeluca
  *
  */
@@ -21,6 +25,7 @@ public class HeadSensorsHandler {
     ALTextToSpeech tts = null;
     long frontTactilSubscriptionId = 0;
     long middleTactilSubscriptionId = 0;
+    private static final int TOP_X_SESSION = 5;
 	private static final String FRONT_EVENT_NAME = "FrontTactilTouched";
 	private static final String MIDDLE_EVENT_NAME = "MiddleTactilTouched";
 
@@ -49,7 +54,7 @@ public class HeadSensorsHandler {
                         // 1 means the sensor has been pressed
                         if (arg0 > 0) {
                             ConferenceVotingRestClient conferenceClient = new ConferenceVotingRestClient();
-                            tts.say(conferenceClient.getTopTalks(5, true));
+                            tts.say(conferenceClient.getTopTalks(TOP_X_SESSION, true));
                         }
                     }
                 });
@@ -62,9 +67,11 @@ public class HeadSensorsHandler {
                         if (arg0 > 0) {
                             if (frontTactilSubscriptionId > 0) {
                                 tts.say("I'll no longer say anything");
-                                // Unsubscribing from FrontTactilTouched event
+                                // Unsubscribing from the 2 events event
                                 memory.unsubscribeToEvent(frontTactilSubscriptionId);
+                                memory.unsubscribeToEvent(middleTactilSubscriptionId);
                                 frontTactilSubscriptionId = 0;
+                                middleTactilSubscriptionId = 0;
                             }
                         }
                     }

@@ -17,6 +17,10 @@ import com.aldebaran.qi.helper.proxies.ALTextToSpeech;
 
 
 /**
+ * 
+ * BarCode reader Handler
+ * Subscribe to Robot event regarding CarCode detection
+ * 
  * @author danieldeluca
  *
  */
@@ -26,6 +30,8 @@ public class BarcodeReaderHandler {
 	ALBarcodeReader barcodeReader = null; 
 	ALTextToSpeech tts = null;
 	long barCodeEventSubscrptionId = 0;
+	
+	//The event on the robot to subscrive to
 	private static final String EVENT_NAME = "BarcodeReader/BarcodeDetected";
 
 	public void run(Session session){
@@ -50,12 +56,12 @@ public class BarcodeReaderHandler {
 							if ((data.size() > 0) && (data.get(0).size() >0)){
 								ArrayList<String> result = data.get(0);
 								logger.info(result.get(0));	
+								//TODO : still does not work, to be continued
 							}
 						}
 					});
 		} catch (Exception e) {
 			logger.fatal(e);
-			System.exit(-1);
 		}
 	}
 
